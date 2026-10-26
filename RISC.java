@@ -21,9 +21,30 @@ public class RISC {
         for (; ;) {
             int instr = progr[pc >> 2];
             int opcode = instr & 0x7f;
+            
             int rd = (instr >> 7) & 0x01f;
             int rs1 = (instr >> 15) & 0x01f;
             int imm = (instr >> 20);
+            
+            String majop = "undefined / unimplemented";
+            switch (opcode >> 2) {
+                case 0xc:
+                    majop = "R";
+                case 0x8:
+                    majop = "S";
+                case 0x18:
+                    majop = "B";
+                case 0x1b:
+                    majop = "J";
+                case 0xd:
+                case 0x5:
+                    majop = "U";
+                case 0x4:
+                case 0x0:
+                case 0x19:
+                case 0x1c:
+                    majop = "I";
+           }
 
             switch (opcode) {
                 case 0x13:
