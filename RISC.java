@@ -1,6 +1,6 @@
 public class RISC {
 
-    static int pc;
+    static int pc = 0;
     static int reg[] = new int[32];
     static byte M[] = new byte[1024];
 
@@ -12,7 +12,7 @@ public class RISC {
     };
 
     public static void dump() {
-        for (int i = 0; i < reg.length; ++i) {
+        for (int i = 0; i < reg.length; i++) {
             System.out.print(reg[i] + " ");
         }
         System.out.println();
@@ -23,6 +23,7 @@ public class RISC {
     }
 
     public static void sim() {
+        reg[2] = 1048576; // Stack pointer initialized at 1 MB
         for (;;) {
             int instr = progr[pc >> 2];
             int opcode = instr & 0x7f;
@@ -74,6 +75,7 @@ public class RISC {
                                     reg[rd] = reg[rs1] >> reg[rs2];
                                     break;
                             }
+                            break;
                         case 0x2: // Set Less Than
                             reg[rd] = (reg[rs1] < reg[rs2]) ? 1 : 0;
                             break;
@@ -103,37 +105,41 @@ public class RISC {
                     break;
                 case 0x18: // B-type
                     majop = "B";
-                    imm = ((instr >>> 7) & 0x1) + (((instr >>> 8) & 0xf) << 1) + (((instr >>> 25) & 0x3f) << 5)
+                    imm = (((instr >>> 7) & 0x1) << 11) + (((instr >>> 8) & 0xf) << 1) + (((instr >>> 25) & 0x3f) << 5)
                             + ((instr >>> 31) << 12);
+                    // Sign-extend the 13-bit immediate to a 32-bit signed integer
+                // (32 - 13 = 19 bits to shift left/right)
+                imm = (imm << 19) >> 19;
+                    System.out.println("Branch instruks med imm " + imm);
                     switch (funct3) {
                         case 0x0: // Branch ==
                             if (reg[rs1] == reg[rs2]) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                         case 0x1: // Branch !=
                             if (reg[rs1] != reg[rs2]) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                         case 0x4: // Branch <
                             if (reg[rs1] < reg[rs2]) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                         case 0x5: // Branch >=
                             if (reg[rs1] >= reg[rs2]) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                         case 0x6: // Branch < (unsigned)
                             if (toUnsigned(reg[rs1]) < toUnsigned(reg[rs2])) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                         case 0x7: // Branch >= (unsigned)
                             if (toUnsigned(reg[rs1]) >= toUnsigned(reg[rs2])) {
-                                pc += imm;
+                                pc += imm - 4;
                             }
                             break;
                     }
@@ -153,17 +159,14 @@ public class RISC {
                 case 0x1c:
                 case 0x4:
                     majop = "I";
-                    imm = (instr >>> 20);
+                    System.out.println("Func3: " + funct3);
+                    imm = (instr >> 20);
                     if (funct3 == 0x5 && imm >>> 5 != 0x00 && imm >>> 5 != 0x20) {
                         System.out.println("The instruction [" + String.valueOf(instr) + "] is not supported.");
                     }
                     switch (funct3) {
                         case 0x0:
-                            switch (funct7) {
-                                case 0x0: // ADD Immediate
-                                    reg[rd] = reg[rs1] + imm;
-                                    break;
-                            }
+                            reg[rd] = reg[rs1] + imm;
                             break;
                         case 0x4: // XOR Immediate
                             reg[rd] = reg[rs1] ^ imm;
@@ -186,6 +189,7 @@ public class RISC {
                                     reg[rd] = reg[rs1] >> (imm & 0xf);
                                     break;
                             }
+                            break;
                         case 0x2: // Set Less Than Imm
                             reg[rd] = (reg[rs1] < imm) ? 1 : 0;
                             break;
@@ -195,6 +199,7 @@ public class RISC {
                     }
                     break;
                 case 0x0: // Immediate - Load instructions
+                    imm = instr >> 20;
                     switch (funct3) {
                         case 0x0: // Load byte
                             reg[rd] = M[rs1 + imm];
