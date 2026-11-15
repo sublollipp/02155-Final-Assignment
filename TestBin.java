@@ -1,7 +1,7 @@
 import java.nio.ByteOrder;
 
 public class TestBin {
-    static String binPath = "binary.bin";
+    static String binPath = "InstructionTests/test_jal.bin";
     public static void main(String[] args) {
         try {
             int[] instructionArray = BinaryWordReader.readBinaryFileAsWords(binPath, ByteOrder.LITTLE_ENDIAN);

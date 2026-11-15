@@ -149,14 +149,45 @@ public class RISC {
                     majop = "J";
                     imm = (((instr >>> 12) & 0xff) << 12) + (((instr >>> 20) & 0x1) << 11)
                             + (((instr >>> 21) & 0x3ff) << 1) + ((instr >>> 31) << 20);
+                    // Jump and link - den eneste J-type instruktion
+                    reg[rd] = pc + 4;
+                    pc += imm - 4;
                     break;
-                case 0xd: // Begge to er cases for U-type
-                case 0x5:
+                // Begge to er cases for U-type
+                case 0xd: // Load upper immediate
                     majop = "U";
                     imm = (instr >>> 12) << 12;
+                    reg[rd] = imm;
                     break;
-                case 0x19: // Alle fire er cases for I
-                case 0x1c:
+                case 0x5: // Add upper immdiate to pc
+                    majop = "U";
+                    imm = (instr >>> 12) << 12;
+                    reg[rd] = pc + imm;
+                    break;
+                 // Alle fire er cases for I-type
+                case 0x19: // Jump and link register
+                    majop = "I";
+                    imm = (instr >> 20);
+                    if (funct3 != 0x0) {
+                        System.out.println("The instruction [" + String.valueOf(instr) + "] with funct3 " + String.valueOf(funct3) + " is not supported.");
+                    }
+                    reg[rd] = pc + 4;
+                    pc = reg[rs1] + imm - 4;
+                    break;
+                case 0x1c: // Ecall (ebreak skal vi ikke have med, så den skrotter vi bare)
+                    if (funct3 != 0x0 || imm != 0x0) {System.out.println("The instruction [" + String.valueOf(instr) + "] with funct3 " + String.valueOf(funct3) + " is not supported.");}
+                    // imm = 0x0 er ecall, imm = 0x1 er ebreak (som vi ikke skal have med)
+                    System.out.println("Ecall");
+                    int a0 = reg[10];
+                    int a7 = reg[17];
+                    switch (a7) {
+                        case 10: // exit
+                            dump();
+                            return;
+                        default:
+                            System.out.println("Ecall " + String.valueOf(a7) + " is not supported.");
+                    }
+                    break;
                 case 0x4:
                     majop = "I";
                     System.out.println("Func3: " + funct3);
