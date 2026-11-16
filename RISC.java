@@ -2,7 +2,7 @@ public class RISC {
 
     static int pc = 0;
     static int reg[] = new int[32];
-    static byte M[] = new byte[1024];
+    static byte M[] = new byte[1048576];
 
     static int progr[] = {
             // As minimal RISC-V assembler example
